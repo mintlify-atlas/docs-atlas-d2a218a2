@@ -1,0 +1,116 @@
+---
+title: OpenAI
+description: Use GPT-4o, o3-mini, gpt-4.1, and other OpenAI models with OpenClaude.
+---
+
+OpenAI is the easiest provider to start with if you already have an API key.
+
+## Setup
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-your-key-here
+    export OPENAI_MODEL=gpt-4o
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-your-key-here"
+    $env:OPENAI_MODEL="gpt-4o"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+Get an API key at [platform.openai.com](https://platform.openai.com/).
+
+## Recommended models
+
+| Model | Best for |
+|-------|----------|
+| `gpt-4o` | General coding, best overall quality and tool use |
+| `gpt-4o-mini` | Faster, cheaper tasks where top quality is not required |
+| `o3-mini` | Reasoning-heavy tasks, complex multi-step problems |
+| `gpt-4.1` | Latest generation, strong tool calling |
+
+## GitHub Models
+
+OpenClaude supports GitHub's inference endpoint (`models.github.ai`), which provides OpenAI-compatible access to several models using your GitHub personal access token.
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_GITHUB=1
+    export GITHUB_TOKEN=ghp_your-token-here
+    export OPENAI_MODEL=openai/gpt-4.1
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_GITHUB="1"
+    $env:GITHUB_TOKEN="ghp_your-token-here"
+    $env:OPENAI_MODEL="openai/gpt-4.1"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+`CLAUDE_CODE_USE_GITHUB=1` is a separate mode from `CLAUDE_CODE_USE_OPENAI=1`. Set one or the other, not both.
+</Note>
+
+Supported model ID formats for GitHub Models:
+
+- `openai/gpt-4.1` — explicit model ID
+- `github:copilot` — shorthand that maps to `openai/gpt-4.1`
+
+Both `GITHUB_TOKEN` and `GH_TOKEN` are accepted as the token variable.
+
+## Azure OpenAI
+
+Point `OPENAI_BASE_URL` at your Azure deployment endpoint:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=your-azure-key
+    export OPENAI_BASE_URL=https://your-resource.openai.azure.com/openai/deployments/your-deployment/v1
+    export OPENAI_MODEL=gpt-4o
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="your-azure-key"
+    $env:OPENAI_BASE_URL="https://your-resource.openai.azure.com/openai/deployments/your-deployment/v1"
+    $env:OPENAI_MODEL="gpt-4o"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+Replace `your-resource` with your Azure resource name and `your-deployment` with your deployment name.
+
+## Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `CLAUDE_CODE_USE_OPENAI` | Yes | Set to `1` to enable the OpenAI provider |
+| `OPENAI_API_KEY` | Yes | Your OpenAI API key |
+| `OPENAI_MODEL` | Yes | Model name, e.g. `gpt-4o` |
+| `OPENAI_BASE_URL` | No | Custom endpoint for Azure or a proxy. Defaults to `https://api.openai.com/v1` |
+| `CLAUDE_CODE_USE_GITHUB` | No | Set to `1` to use GitHub Models instead |
+| `GITHUB_TOKEN` | GitHub only | GitHub PAT with models access |

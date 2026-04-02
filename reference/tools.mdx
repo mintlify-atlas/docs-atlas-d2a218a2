@@ -1,0 +1,100 @@
+---
+title: Tools
+description: All tools available in the OpenClaude agent loop, including file, shell, web, task, MCP, and utility tools.
+---
+
+OpenClaude provides the same tool set as the original Claude Code. Every tool works through the OpenAI shim with any provider that supports function calling.
+
+<Note>
+  For best results, use models with strong function/tool calling support. Smaller models (under 7B parameters) may struggle with multi-step tool chains. See the [model quality guide](/troubleshooting/model-quality) for recommendations.
+</Note>
+
+## File tools
+
+| Tool | Source directory | Description |
+|------|-----------------|-------------|
+| `FileRead` | `src/tools/FileReadTool/` | Read a file or list a directory |
+| `FileWrite` | `src/tools/FileWriteTool/` | Write content to a file (creates or overwrites) |
+| `FileEdit` | `src/tools/FileEditTool/` | Apply exact string replacements in a file |
+| `Glob` | `src/tools/GlobTool/` | Find files by glob pattern |
+| `Grep` | `src/tools/GrepTool/` | Search file contents with regular expressions |
+| `NotebookEdit` | `src/tools/NotebookEditTool/` | Edit Jupyter notebook cells |
+
+## Shell tools
+
+| Tool | Source directory | Description |
+|------|-----------------|-------------|
+| `Bash` | `src/tools/BashTool/` | Run a shell command in a persistent session |
+| `PowerShell` | `src/tools/PowerShellTool/` | Run a PowerShell command (Windows) |
+
+## Web tools
+
+| Tool | Source directory | Description |
+|------|-----------------|-------------|
+| `WebFetch` | `src/tools/WebFetchTool/` | Fetch a URL and convert to markdown |
+| `WebSearch` | `src/tools/WebSearchTool/` | Search the web |
+
+<Warning>
+  `WebSearch` is disabled for non-Anthropic providers by default. Set `FIRECRAWL_API_KEY` to enable it for any provider. Without the key, `WebFetch` also falls back to basic HTTP and will fail on JavaScript-rendered pages.
+</Warning>
+
+## Agent and task tools
+
+| Tool | Source directory | Description |
+|------|-----------------|-------------|
+| `Agent` | `src/tools/AgentTool/` | Spawn a sub-agent to handle a subtask |
+| `TaskCreate` | `src/tools/TaskCreateTool/` | Create a background task |
+| `TaskGet` | `src/tools/TaskGetTool/` | Get the status or output of a task by ID |
+| `TaskList` | `src/tools/TaskListTool/` | List all tasks |
+| `TaskUpdate` | `src/tools/TaskUpdateTool/` | Update a task |
+| `TaskStop` | `src/tools/TaskStopTool/` | Stop a running task |
+| `TaskOutput` | `src/tools/TaskOutputTool/` | Retrieve task output |
+
+Sub-agents spawned by `Agent` use the same provider and model as the parent session. They share no state with the parent except what is passed explicitly in the task description.
+
+## MCP tools
+
+| Tool | Source directory | Description |
+|------|-----------------|-------------|
+| `MCPTool` | `src/tools/MCPTool/` | Call a tool exposed by an MCP server |
+| `ListMcpResources` | `src/tools/ListMcpResourcesTool/` | List resources available on an MCP server |
+| `ReadMcpResource` | `src/tools/ReadMcpResourceTool/` | Read a resource from an MCP server |
+| `McpAuth` | `src/tools/McpAuthTool/` | Authenticate with an MCP server |
+
+## Utility tools
+
+| Tool | Source directory | Description |
+|------|-----------------|-------------|
+| `TodoWrite` | `src/tools/TodoWriteTool/` | Create and manage a structured task list |
+| `ToolSearch` | `src/tools/ToolSearchTool/` | Search available tools by name or description |
+| `LSP` | `src/tools/LSPTool/` | Language server protocol operations (go-to-def, diagnostics) |
+| `REPL` | `src/tools/REPLTool/` | Run code in an interactive REPL session |
+| `Sleep` | `src/tools/SleepTool/` | Pause execution for a set number of milliseconds |
+| `AskUserQuestion` | `src/tools/AskUserQuestionTool/` | Ask the user a question and wait for a response |
+
+## Additional tools
+
+The `src/tools/` directory contains several more tools for platform-specific, experimental, and advanced use cases:
+
+<AccordionGroup>
+  <Accordion title="Workflow and planning tools">
+    - `EnterPlanMode` / `ExitPlanMode` — enter and exit plan mode for step-by-step planning before execution
+    - `VerifyPlanExecution` — verify that a plan was executed as specified
+    - `WorkflowTool` — run a predefined workflow
+    - `ScheduleCronTool` — schedule a recurring cron task
+  </Accordion>
+  <Accordion title="Collaboration tools">
+    - `SendMessageTool` — send a message to another agent or session
+    - `RemoteTriggerTool` — trigger a remote workflow
+    - `TeamCreateTool` / `TeamDeleteTool` — manage agent teams
+  </Accordion>
+  <Accordion title="Source control tools">
+    - `EnterWorktree` / `ExitWorktree` — manage git worktree sessions
+    - `SuggestBackgroundPRTool` — suggest opening a pull request in the background
+  </Accordion>
+  <Accordion title="Platform and skill tools">
+    - `SkillTool` — load and invoke bundled skills
+    - `BriefTool` — produce a brief summary of a document or session
+    - `TungstenTool` — Tungsten-specific integration (experimental)
+  </Accordion>
+</AccordionGroup>

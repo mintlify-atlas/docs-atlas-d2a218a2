@@ -1,97 +1,77 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: OpenClaude
+description: Claude Code opened to any LLM — OpenAI, Gemini, DeepSeek, Ollama, and 200+ models via an OpenAI-compatible API shim.
 ---
 
-## Setting up
+OpenClaude is a fork of Claude Code that replaces the Anthropic-only backend with an OpenAI-compatible provider shim. Every tool, slash command, sub-agent, and memory feature works exactly as before — backed by whatever model you choose.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="macOS / Linux quickstart" icon="terminal" href="/quickstart">
+    Get running in under five minutes on macOS or Linux.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Windows quickstart" icon="windows" href="/quickstart-windows">
+    Step-by-step setup for Windows PowerShell.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Providers" icon="plug" href="/providers/openai">
+    Connect OpenAI, Ollama, DeepSeek, Gemini, Codex, and 200+ models.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="How it works" icon="gear" href="/reference/how-it-works">
+    The OpenAI shim and architecture explained.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Get started in three steps
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Install OpenClaude">
+    ```bash
+    npm install -g @gitlawb/openclaude
+    ```
+    Requires Node.js 20 or newer.
+  </Step>
+  <Step title="Set your provider">
+    Pick any OpenAI-compatible provider and export three variables:
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-your-key-here
+    export OPENAI_MODEL=gpt-4o
+    ```
+    For local inference with Ollama, no API key is needed — just set `OPENAI_BASE_URL=http://localhost:11434/v1`.
+  </Step>
+  <Step title="Run OpenClaude">
+    ```bash
+    openclaude
+    ```
+    The CLI starts and waits for your prompt. Ask it to explain code, edit files, run commands, or review changes.
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## What works
 
-## Need inspiration?
+All of Claude Code's tools work with any provider:
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={2}>
+  <Card title="All tools" icon="wrench">
+    Bash, FileRead, FileWrite, FileEdit, Glob, Grep, WebFetch, WebSearch, Agent, MCP, LSP, NotebookEdit, Tasks
+  </Card>
+  <Card title="Streaming" icon="bolt">
+    Real-time token streaming from every supported provider
+  </Card>
+  <Card title="Tool chains" icon="link">
+    Multi-step tool calling — the model calls tools, gets results, and continues
+  </Card>
+  <Card title="Sub-agents" icon="robot">
+    AgentTool spawns sub-agents using the same provider
+  </Card>
+</CardGroup>
+
+## Supported providers
+
+| Provider | Setup |
+|----------|-------|
+| OpenAI | [Guide](/providers/openai) |
+| DeepSeek | [Guide](/providers/deepseek) |
+| Google Gemini | [Guide](/providers/gemini) |
+| Ollama (local) | [Guide](/providers/ollama) |
+| ChatGPT Codex | [Guide](/providers/codex) |
+| LM Studio, Atomic Chat, Groq, Mistral, Together AI, Azure OpenAI | [Local & other providers](/providers/local-models) |

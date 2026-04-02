@@ -1,0 +1,180 @@
+---
+title: Diagnostics
+description: Validate your OpenClaude setup with built-in runtime checks before you launch.
+---
+
+OpenClaude ships a suite of runtime validation commands so you can confirm your provider configuration, API key, and endpoint reachability before starting an agent session.
+
+<Note>
+  All `bun run` commands require a source build with Bun. They are not available when you install via `npm install -g @gitlawb/openclaude`. Clone the repository and run `bun install && bun run build` to get started with source builds.
+</Note>
+
+## Commands
+
+### `bun run doctor:runtime`
+
+The primary health check. Run this first whenever something is not working.
+
+```bash
+bun run doctor:runtime
+```
+
+What it checks:
+
+- `CLAUDE_CODE_USE_OPENAI` is set to `1`
+- `OPENAI_API_KEY` is present and not a placeholder value (for non-local providers)
+- The configured provider endpoint is reachable over the network
+- For Codex profiles: `CODEX_API_KEY` or `~/.codex/auth.json` is present and `POST /responses` responds
+
+The command exits non-zero on any failure so you can use it in scripts and CI.
+
+---
+
+### `bun run doctor:runtime:json`
+
+Outputs the same checks as `doctor:runtime` in structured JSON. Use this in automation pipelines, CI jobs, or when you want to process diagnostics programmatically.
+
+```bash
+bun run doctor:runtime:json
+```
+
+Example output shape:
+
+```json
+[
+  { "ok": true,  "label": "Provider mode",    "detail": "OpenAI-compatible provider enabled." },
+  { "ok": true,  "label": "OPENAI_MODEL",      "detail": "gpt-4o" },
+  { "ok": true,  "label": "OPENAI_BASE_URL",   "detail": "https://api.openai.com/v1" },
+  { "ok": true,  "label": "API key",           "detail": "Configured." },
+  { "ok": true,  "label": "Provider reachability", "detail": "200 OK" }
+]
+```
+
+---
+
+### `bun run doctor:report`
+
+Runs the full runtime check and writes the result to disk.
+
+```bash
+bun run doctor:report
+```
+
+Output file: `reports/doctor-runtime.json`
+
+Use this before filing a bug report so you have a reproducible snapshot of your environment at the time of the failure.
+
+---
+
+### `bun run smoke`
+
+A startup sanity check. Launches the compiled binary, confirms it exits cleanly, and verifies the build artifact at `dist/cli.mjs` exists.
+
+```bash
+bun run smoke
+```
+
+Run this after `bun run build` to confirm the build is usable before running a full provider check.
+
+---
+
+### `bun run hardening:check`
+
+Runs `smoke` and `doctor:runtime` in sequence. This is the recommended pre-launch validation for CI or shared environments.
+
+```bash
+bun run hardening:check
+```
+
+---
+
+### `bun run hardening:strict`
+
+Extends `hardening:check` with a project-wide TypeScript typecheck. Use this before merging changes or shipping a build.
+
+```bash
+bun run hardening:strict
+```
+
+---
+
+## Quick recovery checklist
+
+When something breaks, run these three commands in order:
+
+<Steps>
+  <Step title="Check provider and environment">
+    ```bash
+    bun run doctor:runtime
+    ```
+    Read the output carefully. Each check shows a pass or fail label with a detail message.
+  </Step>
+  <Step title="Save a diagnostics snapshot">
+    ```bash
+    bun run doctor:report
+    ```
+    This writes `reports/doctor-runtime.json`. Attach it when asking for help.
+  </Step>
+  <Step title="Verify the build starts cleanly">
+    ```bash
+    bun run smoke
+    ```
+    If this fails, run `bun run build` first and then retry.
+  </Step>
+</Steps>
+
+---
+
+## Local provider detection
+
+`doctor:runtime` skips API key validation when the configured endpoint is a local address. The following base URL patterns are treated as local:
+
+- `http://localhost:*` — any localhost port (e.g. Ollama at `http://localhost:11434/v1`)
+- `http://127.0.0.1:*` — loopback address (e.g. Atomic Chat at `http://127.0.0.1:1337/v1`)
+- `http://10.*.*.*` — private LAN addresses (e.g. a network-local Ollama instance at `http://10.0.0.1:11434/v1`)
+
+When any of these patterns match, `OPENAI_API_KEY` is not required and key validation is skipped entirely.
+
+---
+
+## Codex profile probing
+
+Codex profiles use a different reachability probe than standard OpenAI-compatible providers.
+
+- Standard providers: `doctor:runtime` sends a `GET /models` request to check reachability
+- Codex profiles: `doctor:runtime` sends a `POST /responses` request instead
+
+This matters because the Codex backend does not expose `GET /models`. If you configure `OPENAI_MODEL=codexplan` or `OPENAI_MODEL=codexspark`, the doctor automatically switches to the `/responses` probe.
+
+---
+
+## GPU check for Ollama
+
+If responses from Ollama are very slow, check whether inference is running on the GPU or falling back to CPU:
+
+```bash
+ollama ps
+```
+
+Look at the `PROCESSOR` column in the output:
+
+| `PROCESSOR` value | Meaning |
+|---|---|
+| `GPU` | Running on GPU — expected performance |
+| `CPU` | Running on CPU — valid but slower, especially for large models |
+
+If you see `CPU` on a machine that has a GPU, the model may be too large to fit in VRAM. Try a smaller model:
+
+```bash
+bun run profile:init -- --provider ollama --model llama3.1:8b
+```
+
+Or use the preset shortcut:
+
+```bash
+bun run profile:fast
+```
+
+<Tip>
+  Use `bun run profile:recommend -- --goal coding` to automatically rank your installed Ollama models and pick the best one for your hardware.
+</Tip>

@@ -1,0 +1,62 @@
+---
+title: Web search and fetch
+description: Enable WebSearch and upgrade WebFetch for non-Anthropic providers using Firecrawl.
+---
+
+OpenClaude exposes two web tools to models: `WebSearch` and `WebFetch`. Their behavior depends on which provider you are using and whether you have set a Firecrawl API key.
+
+## Default behavior
+
+**Without Firecrawl:**
+
+- `WebSearch` is **disabled** for all non-Anthropic providers. The native search backend is only available through the Anthropic API or the Codex responses endpoint.
+- `WebFetch` works out of the box using basic HTTP requests with HTML-to-markdown conversion, but it fails on:
+  - JavaScript-rendered pages (React, Next.js, Vue, and other SPAs)
+  - Sites that block plain HTTP clients or require a real browser user-agent
+
+## Enabling Firecrawl
+
+[Firecrawl](https://firecrawl.dev/) is an LLM-friendly web scraping API. Setting its key fixes both limitations above.
+
+<Steps>
+  <Step title="Get a Firecrawl API key">
+    Sign up at [firecrawl.dev](https://firecrawl.dev/). The free tier includes **500 credits** with no credit card required.
+  </Step>
+  <Step title="Set the environment variable">
+    <Tabs>
+      <Tab title="macOS / Linux">
+        ```bash
+        export FIRECRAWL_API_KEY=fc-your-key-here
+        ```
+
+        Add this to `~/.bashrc` or `~/.zshrc` to persist across sessions.
+      </Tab>
+      <Tab title="Windows PowerShell">
+        ```powershell
+        $env:FIRECRAWL_API_KEY="fc-your-key-here"
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Launch OpenClaude">
+    Start OpenClaude normally. Both tools activate automatically when the key is present — no other configuration is needed.
+  </Step>
+</Steps>
+
+## What Firecrawl enables
+
+With `FIRECRAWL_API_KEY` set:
+
+- **`WebSearch`** is enabled for all providers (Ollama, OpenAI, GitHub Models, etc.) and routes through Firecrawl's search API
+- **`WebFetch`** uses Firecrawl's scrape endpoint instead of raw HTTP, correctly handling JavaScript-rendered pages and bot-detection barriers
+
+## Capability summary
+
+| Tool | Without Firecrawl | With Firecrawl |
+|------|------------------|----------------|
+| `WebSearch` | Disabled for non-Anthropic providers | Enabled for all providers |
+| `WebFetch` | Basic HTTP, no JS rendering | Full scrape with JS rendering |
+
+<Note>
+If `FIRECRAWL_API_KEY` is not set, both tools fall back to their original behavior. Setting the variable is entirely optional — it is only needed if you want web search or reliable fetching of JS-heavy pages with non-Anthropic models.
+</Note>

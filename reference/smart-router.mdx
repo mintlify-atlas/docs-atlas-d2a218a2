@@ -1,0 +1,161 @@
+---
+title: Smart router
+description: Python auto-router that pings providers, scores by latency and cost, and routes each request to the best available provider.
+---
+
+`smart_router.py` is an optional Python component that dynamically selects the best provider for each request instead of using a fixed one. It pings providers on startup, tracks real latency from every request, and falls back automatically when a provider fails.
+
+## Overview
+
+<Steps>
+  <Step title="Initialize">
+    On startup, the router pings all configured providers concurrently and records their initial latency scores.
+  </Step>
+  <Step title="Score">
+    Before each request, providers are scored by a weighted formula using latency, cost, and error rate.
+  </Step>
+  <Step title="Route">
+    The request is sent to the provider with the lowest score.
+  </Step>
+  <Step title="Record">
+    After the request completes, `record_result()` updates the provider's rolling average latency. If the error rate exceeds 70%, the provider is marked unhealthy and re-pinged after 60 seconds.
+  </Step>
+</Steps>
+
+## Basic usage
+
+```python
+from smart_router import SmartRouter
+
+router = SmartRouter()
+await router.initialize()
+
+result = await router.route(messages, claude_model="claude-sonnet")
+# result["provider"]  → "openai"
+# result["model"]     → "gpt-4.1"
+# result["api_key"]   → "sk-..."
+```
+
+After each request, record the outcome so latency scores stay accurate:
+
+```python
+await router.record_result(
+    provider_name="openai",
+    success=True,
+    duration_ms=450.0,
+)
+```
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROUTER_MODE` | `fixed` | Set to `smart` to enable smart routing |
+| `ROUTER_STRATEGY` | `balanced` | Scoring strategy: `latency`, `cost`, or `balanced` |
+| `ROUTER_FALLBACK` | `true` | Retry on provider failure |
+| `BIG_MODEL` | `gpt-4.1` | Model used for large requests (opus/sonnet/large keywords) |
+| `SMALL_MODEL` | `gpt-4.1-mini` | Model used for small requests |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
+| `ATOMIC_CHAT_BASE_URL` | `http://127.0.0.1:1337` | Atomic Chat server URL |
+
+## Routing strategies
+
+| Strategy | Formula |
+|----------|---------|
+| `latency` | `latency_score + error_penalty` |
+| `cost` | `cost_score + error_penalty` |
+| `balanced` | `(latency_score × 0.5) + (cost_score × 0.5) + error_penalty` |
+
+A lower score means a better provider. Unhealthy or unconfigured providers always score `inf` and are never selected.
+
+## Provider scoring formula
+
+```python
+def score(self, strategy: str = "balanced") -> float:
+    if not self.healthy or not self.is_configured:
+        return float("inf")
+
+    latency_score = self.avg_latency_ms / 1000.0   # normalize to seconds
+    cost_score = self.cost_per_1k_tokens * 100      # normalize to similar scale
+    error_penalty = self.error_rate * 500           # heavy penalty for errors
+
+    if strategy == "latency":
+        return latency_score + error_penalty
+    elif strategy == "cost":
+        return cost_score + error_penalty
+    else:  # balanced
+        return (latency_score * 0.5) + (cost_score * 0.5) + error_penalty
+```
+
+## Default provider catalogue
+
+| Provider | Cost per 1k tokens | API key env var | Notes |
+|----------|-------------------|-----------------|-------|
+| `openai` | `$0.002` | `OPENAI_API_KEY` | Default big: `gpt-4.1`, small: `gpt-4.1-mini` |
+| `gemini` | `$0.0005` | `GEMINI_API_KEY` | Default big: `gemini-2.5-pro`, small: `gemini-2.0-flash` |
+| `ollama` | `$0.000` | — | Local, no key required |
+| `atomic-chat` | `$0.000` | — | Local Apple Silicon, no key required |
+
+<Note>
+  `ollama` and `atomic-chat` are always considered "configured" and never require an API key. The router skips them only if their ping URL is unreachable.
+</Note>
+
+## `route()` return value
+
+```python
+{
+    "provider": "openai",          # provider name
+    "model": "gpt-4.1",            # actual model to use for this request
+    "api_key": "sk-...",           # API key ("none" for local providers)
+    "provider_object": <Provider>  # full Provider dataclass for advanced use
+}
+```
+
+The router maps Claude model names to provider models based on size. Any model name containing `opus`, `sonnet`, `large`, or `big` is routed to `big_model`; all others go to `small_model`.
+
+## `status()` for monitoring
+
+```python
+status = router.status()
+# Returns a list of dicts, one per provider:
+# [
+#   {
+#     "provider": "openai",
+#     "healthy": True,
+#     "configured": True,
+#     "latency_ms": 212.4,
+#     "cost_per_1k": 0.002,
+#     "requests": 47,
+#     "errors": 1,
+#     "error_rate": "2.1%",
+#     "score": 0.213
+#   },
+#   ...
+# ]
+```
+
+## `record_result()` for latency tracking
+
+```python
+await router.record_result(
+    provider_name="gemini",
+    success=True,
+    duration_ms=310.0,
+)
+```
+
+Internally this applies an exponential moving average with `alpha = 0.3`:
+
+```python
+def _update_latency(self, provider: Provider, duration_ms: float) -> None:
+    alpha = 0.3  # weight for new observation
+    provider.avg_latency_ms = (
+        alpha * duration_ms + (1 - alpha) * provider.avg_latency_ms
+    )
+```
+
+If `success=False`, the error count increments. When the error rate exceeds 70% over 3 or more requests, the provider is marked unhealthy and re-pinged after 60 seconds. If the re-ping succeeds, the provider is restored to the pool automatically.
+
+<Warning>
+  The smart router is a Python component designed for server-side proxy setups. It is not invoked by `openclaude` directly — you integrate it in your own proxy server or `server.py`.
+</Warning>

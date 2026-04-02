@@ -1,0 +1,237 @@
+---
+title: Windows quickstart
+description: Get OpenClaude running on Windows using PowerShell in under five minutes.
+keywords: ['openclaude', 'install', 'windows', 'powershell', 'openai', 'deepseek', 'ollama', 'quickstart']
+---
+
+OpenClaude is a CLI coding agent — a fork of Claude Code — that works with any OpenAI-compatible model provider. This guide walks you through installation, provider setup, and your first run on Windows using PowerShell.
+
+<Steps>
+
+<Step title="Install Node.js 20 or newer">
+
+OpenClaude requires Node.js 20 or newer. Download the LTS release from [nodejs.org](https://nodejs.org/) and run the Windows installer.
+
+After the installer finishes, open a new PowerShell window and verify:
+
+```powershell
+node --version
+npm --version
+```
+
+Both commands should return a version number. If `node` is not found, restart PowerShell — the installer updates `PATH` but the change only takes effect in new sessions.
+
+</Step>
+
+<Step title="Install OpenClaude">
+
+Run this command in PowerShell:
+
+```powershell
+npm install -g @gitlawb/openclaude
+```
+
+The package installs a single binary named `openclaude`. Confirm it is available:
+
+```powershell
+openclaude --version
+```
+
+<Note>
+If `openclaude` is not found immediately after install, close PowerShell and open a new window. npm's global bin directory may not be on your `PATH` in the current session. See [troubleshooting](#command-not-found-after-install) below if reopening does not help.
+</Note>
+
+</Step>
+
+<Step title="Set your provider environment variables">
+
+OpenClaude reads environment variables to know which LLM backend to call. Pick one provider to start with — you can switch later.
+
+<Tabs>
+  <Tab title="OpenAI">
+    Replace `sk-your-key-here` with your real key from [platform.openai.com](https://platform.openai.com/api-keys).
+
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-your-key-here"
+    $env:OPENAI_MODEL="gpt-4o"
+    ```
+
+    `gpt-4o` has excellent tool-calling support and is the recommended default for new users.
+  </Tab>
+  <Tab title="DeepSeek">
+    Get your key from [platform.deepseek.com](https://platform.deepseek.com/).
+
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-your-key-here"
+    $env:OPENAI_BASE_URL="https://api.deepseek.com/v1"
+    $env:OPENAI_MODEL="deepseek-chat"
+    ```
+
+    DeepSeek uses an OpenAI-compatible API. Setting `OPENAI_BASE_URL` points the shim at DeepSeek's endpoint instead of OpenAI's.
+  </Tab>
+  <Tab title="Ollama (local)">
+    Ollama runs models locally — no API key required.
+
+    First, install Ollama from [ollama.com/download/windows](https://ollama.com/download/windows), then open PowerShell and pull a model:
+
+    ```powershell
+    ollama pull llama3.1:8b
+    ```
+
+    Then set the variables:
+
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_BASE_URL="http://localhost:11434/v1"
+    $env:OPENAI_MODEL="llama3.1:8b"
+    ```
+
+    <Note>
+    No `OPENAI_API_KEY` is needed for Ollama. Make sure Ollama is running before you start OpenClaude — it does not auto-start. Look for the Ollama icon in the system tray to confirm it is active.
+    </Note>
+  </Tab>
+</Tabs>
+
+</Step>
+
+<Step title="Run OpenClaude">
+
+Navigate to a project directory and launch the CLI:
+
+```powershell
+cd C:\your\project
+openclaude
+```
+
+The CLI starts and waits for your prompt. You can ask it to explain code, edit files, run commands, review changes, or commit work — all tools from Claude Code work the same way.
+
+</Step>
+
+<Step title="Make variables permanent">
+
+Variables set with `$env:` only last for the current PowerShell session. To avoid re-setting them every time you open PowerShell, add them to your PowerShell profile.
+
+Open your profile in Notepad — PowerShell creates the file if it does not exist:
+
+```powershell
+notepad $PROFILE
+```
+
+Add the following lines for your chosen provider and save the file:
+
+<Tabs>
+  <Tab title="OpenAI">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-your-key-here"
+    $env:OPENAI_MODEL="gpt-4o"
+    ```
+  </Tab>
+  <Tab title="DeepSeek">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-your-key-here"
+    $env:OPENAI_BASE_URL="https://api.deepseek.com/v1"
+    $env:OPENAI_MODEL="deepseek-chat"
+    ```
+  </Tab>
+  <Tab title="Ollama (local)">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_BASE_URL="http://localhost:11434/v1"
+    $env:OPENAI_MODEL="llama3.1:8b"
+    ```
+  </Tab>
+</Tabs>
+
+Close and reopen PowerShell for the profile to take effect.
+
+<Warning>
+Replace `sk-your-key-here` with your actual API key before saving. Storing a placeholder in your profile will cause authentication errors on every new PowerShell session.
+</Warning>
+
+<Note>
+If PowerShell says it cannot load your profile because running scripts is disabled, run this command once as Administrator to allow local scripts:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+</Note>
+
+</Step>
+
+</Steps>
+
+## Update OpenClaude
+
+To update to the latest version:
+
+```powershell
+npm install -g @gitlawb/openclaude@latest
+```
+
+## Uninstall
+
+```powershell
+npm uninstall -g @gitlawb/openclaude
+```
+
+## Troubleshooting
+
+### Command not found after install
+
+`openclaude` is not recognized even after a successful `npm install -g`. This is a `PATH` issue — npm's global bin directory is not in your current session's `PATH`.
+
+**Quick fix:** Close PowerShell and open a new window. The updated `PATH` from the npm install takes effect in fresh sessions.
+
+**If the problem persists:** Find where npm puts global binaries:
+
+```powershell
+npm bin -g
+```
+
+Add the printed path to your user `PATH` in **System Properties → Advanced → Environment Variables**, then restart PowerShell.
+
+### Invalid API key error
+
+The key in `OPENAI_API_KEY` was rejected. Check that:
+
+- You copied the full key — keys are long and easy to truncate
+- The key is active in your provider's dashboard
+- You are not using a key from a different provider (e.g., an Anthropic key against the OpenAI endpoint)
+
+Re-set the variable with the correct value and run `openclaude` again.
+
+### Ollama: connection refused
+
+OpenClaude cannot reach `http://localhost:11434/v1`. Make sure:
+
+- Ollama is installed — run `ollama --version`
+- Ollama is running — look for its icon in the Windows system tray, or start it from the Start menu
+- Your chosen model was pulled — run `ollama list` to confirm
+
+### Execution policy blocks profile loading
+
+If PowerShell refuses to load your profile with an error about script execution being disabled, run this once as Administrator:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+This allows locally created scripts (like your profile) to run while still requiring downloaded scripts to be signed.
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Explore all providers" icon="plug" href="/providers/openai">
+    DeepSeek, Gemini, Codex, Ollama, and 200+ OpenAI-compatible models.
+  </Card>
+  <Card title="Provider profiles" icon="sliders" href="/configuration/provider-profiles">
+    Save and switch provider configurations without re-setting variables every session.
+  </Card>
+  <Card title="Diagnostics" icon="stethoscope" href="/troubleshooting/diagnostics">
+    Validate your runtime setup with the built-in system check tool.
+  </Card>
+</CardGroup>

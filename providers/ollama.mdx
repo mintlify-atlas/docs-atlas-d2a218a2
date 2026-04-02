@@ -1,0 +1,116 @@
+---
+title: Ollama
+description: Run models locally with Ollama — no API key required.
+---
+
+Ollama lets you run open-weight models on your own machine. No API key is needed, and your data stays local.
+
+## Prerequisites
+
+Install Ollama from [ollama.com](https://ollama.com/download). Confirm it is working:
+
+```bash
+ollama --version
+```
+
+## Setup
+
+<Steps>
+  <Step title="Pull a model">
+    ```bash
+    ollama pull llama3.1:8b
+    ```
+  </Step>
+  <Step title="Set environment variables">
+    <Tabs>
+      <Tab title="macOS / Linux">
+        ```bash
+        export CLAUDE_CODE_USE_OPENAI=1
+        export OPENAI_BASE_URL=http://localhost:11434/v1
+        export OPENAI_MODEL=llama3.1:8b
+        ```
+      </Tab>
+      <Tab title="Windows PowerShell">
+        ```powershell
+        $env:CLAUDE_CODE_USE_OPENAI="1"
+        $env:OPENAI_BASE_URL="http://localhost:11434/v1"
+        $env:OPENAI_MODEL="llama3.1:8b"
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+  <Step title="Launch OpenClaude">
+    ```bash
+    openclaude
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+Ollama must be running before you launch OpenClaude. If it is not already running as a background service, start it with `ollama serve`.
+</Warning>
+
+## Recommended models
+
+| Model | Best for | VRAM needed |
+|-------|----------|-------------|
+| `llama3.1:8b` | Fast general use, good tool calling | ~6 GB |
+| `llama3.3:70b` | High quality, strong tool calling | ~40 GB |
+| `qwen2.5-coder:7b` | Code-specific tasks, lower hardware | ~5 GB |
+| `qwen2.5-coder:14b` | Better code quality, still fits mid-range GPU | ~10 GB |
+| `llama3.2:3b` | Lowest latency, minimal hardware requirements | ~2 GB |
+
+<Tip>
+For agentic tasks with multi-step tool chains, prefer models of 7B or larger. Models under 7B may fail to produce valid tool call JSON consistently.
+</Tip>
+
+## Profile shortcuts
+
+If you are running from source with Bun, use the preset launchers to avoid setting variables manually:
+
+```bash
+# bootstrap an Ollama profile for the fastest model
+bun run profile:fast
+
+# bootstrap an Ollama profile for code-focused tasks
+bun run profile:code
+```
+
+Or let OpenClaude select the best installed model for your goal automatically:
+
+```bash
+bun run profile:init -- --provider ollama --goal coding
+bun run dev:profile
+```
+
+The `dev:ollama` launcher runs `doctor:runtime` first and only starts the app if Ollama is reachable:
+
+```bash
+bun run dev:ollama
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="ollama: command not found">
+    Ollama is not installed or not on your PATH. Install it from [ollama.com](https://ollama.com/download) and open a new terminal to reload PATH before trying again.
+  </Accordion>
+  <Accordion title="Provider reachability failed">
+    Ollama is installed but not running. Start it:
+
+    ```bash
+    ollama serve
+    ```
+
+    Then relaunch OpenClaude.
+  </Accordion>
+  <Accordion title="Slow responses">
+    Check whether the model is running on GPU or CPU:
+
+    ```bash
+    ollama ps
+    ```
+
+    If the `PROCESSOR` column shows `CPU`, the model is not using your GPU and inference will be slow for large models. Switch to a smaller model such as `llama3.2:3b` or `qwen2.5-coder:7b`, or ensure your GPU drivers are installed correctly.
+  </Accordion>
+</AccordionGroup>

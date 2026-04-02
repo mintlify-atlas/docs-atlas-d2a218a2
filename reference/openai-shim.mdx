@@ -1,0 +1,223 @@
+---
+title: OpenAI shim
+description: Technical reference for src/services/api/openaiShim.ts — the translation layer between Claude Code and any OpenAI-compatible API.
+---
+
+`src/services/api/openaiShim.ts` is the core of OpenClaude. It implements the Anthropic SDK interface and translates every call into an OpenAI chat completion request, then converts responses back into Anthropic streaming events so the rest of the codebase is unaware of the provider swap.
+
+## Supported providers
+
+The shim works with any endpoint that speaks the OpenAI chat completions API:
+
+<Columns cols={2}>
+  <Card title="Cloud providers">
+    - OpenAI (`api.openai.com`)
+    - Azure OpenAI
+    - OpenRouter (`openrouter.ai`)
+    - Together AI (`api.together.xyz`)
+    - Groq (`api.groq.com`)
+    - Fireworks AI
+    - DeepSeek (`api.deepseek.com`)
+    - Mistral (`api.mistral.ai`)
+    - GitHub Models (`models.github.ai`)
+    - Google Gemini (native, via `CLAUDE_CODE_USE_GEMINI=1`)
+    - AWS Bedrock (via `CLAUDE_CODE_USE_BEDROCK=1`)
+    - Google Vertex AI (via `CLAUDE_CODE_USE_VERTEX=1`)
+  </Card>
+  <Card title="Local providers">
+    - Ollama (`localhost:11434`)
+    - LM Studio (`localhost:1234`)
+    - Atomic Chat (`127.0.0.1:1337`)
+    - Any other OpenAI-compatible server
+  </Card>
+</Columns>
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLAUDE_CODE_USE_OPENAI` | — | Set to `1` to enable the shim |
+| `OPENAI_API_KEY` | — | API key (omit for local providers) |
+| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Provider base URL |
+| `OPENAI_MODEL` | `gpt-4o` | Default model name |
+| `CLAUDE_CODE_USE_GITHUB` | — | Set to `1` to use GitHub Models |
+| `GITHUB_TOKEN` / `GH_TOKEN` | — | GitHub PAT with models access |
+| `CODEX_API_KEY` | — | Codex backend API key |
+
+## Message format translation
+
+The shim converts Anthropic's content block format into the OpenAI messages array.
+
+### Tool use blocks
+
+**Anthropic `tool_use` block (from Claude Code):**
+
+```json
+{
+  "type": "tool_use",
+  "id": "tool_123",
+  "name": "bash",
+  "input": { "command": "ls -la" }
+}
+```
+
+**Translated to OpenAI `tool_calls`:**
+
+```json
+{
+  "role": "assistant",
+  "content": "",
+  "tool_calls": [
+    {
+      "id": "tool_123",
+      "type": "function",
+      "function": {
+        "name": "bash",
+        "arguments": "{\"command\":\"ls -la\"}"
+      }
+    }
+  ]
+}
+```
+
+### Tool result blocks
+
+**Anthropic `tool_result` block (from Claude Code user turn):**
+
+```json
+{
+  "type": "tool_result",
+  "tool_use_id": "tool_123",
+  "content": [{ "type": "text", "text": "file.ts\nREADME.md" }]
+}
+```
+
+**Translated to OpenAI `role: "tool"` message:**
+
+```json
+{
+  "role": "tool",
+  "tool_call_id": "tool_123",
+  "content": "file.ts\nREADME.md"
+}
+```
+
+### System prompt arrays
+
+Anthropic system prompts can be arrays of content blocks. The shim flattens them to a single string:
+
+```typescript
+function convertSystemPrompt(system: unknown): string {
+  if (!system) return ''
+  if (typeof system === 'string') return system
+  if (Array.isArray(system)) {
+    return system
+      .map((block: { type?: string; text?: string }) =>
+        block.type === 'text' ? block.text ?? '' : '',
+      )
+      .join('\n\n')
+  }
+  return String(system)
+}
+```
+
+## Streaming
+
+The shim consumes raw OpenAI SSE chunks and emits them as Anthropic stream events. Claude Code's streaming consumer receives exactly the events it expects:
+
+| Anthropic event | When emitted |
+|----------------|-------------|
+| `content_block_start` | First chunk of a new content block or tool call |
+| `content_block_delta` | Each incremental text or arguments chunk |
+| `content_block_stop` | End of a content block |
+| `message_delta` | Final usage stats (`input_tokens`, `output_tokens`) |
+| `message_stop` | End of stream |
+
+<Note>
+  The shim emits these events synchronously from an async generator so they interleave correctly with tool execution in the agent loop.
+</Note>
+
+## Local provider detection
+
+`src/services/api/providerConfig.ts` exports `isLocalProviderUrl()`, which returns `true` for any of the following:
+
+- `localhost`, `127.0.0.1`, `::1`
+- The full `127.0.0.0/8` loopback range
+- RFC-1918 private IPv4 addresses (`10.x.x.x`, `172.16–31.x.x`, `192.168.x.x`)
+- IPv6 ULA (`fc00::/7`) and link-local (`fe80::/10`) addresses
+- `.local` hostnames (mDNS)
+
+When `isLocalProviderUrl()` returns `true`, the shim skips API key validation so Ollama, LM Studio, and Atomic Chat work without any key.
+
+```typescript
+export function isLocalProviderUrl(baseUrl: string | undefined): boolean {
+  if (!baseUrl) return false
+  try {
+    let hostname = new URL(baseUrl).hostname.toLowerCase()
+    // ... RFC-1918, loopback, .local checks
+    return false
+  } catch {
+    return false
+  }
+}
+```
+
+## Schema sanitization
+
+Before sending tool definitions to a provider, the shim runs every tool schema through `normalizeSchemaForOpenAI()`, which internally calls `sanitizeSchemaForOpenAICompat()`. This strips Anthropic-specific JSON Schema extensions and ensures `required` arrays and `additionalProperties` comply with the strict requirements of OpenAI and Codex endpoints.
+
+```typescript
+function convertTools(
+  tools: Array<{ name: string; description?: string; input_schema?: Record<string, unknown> }>,
+): OpenAITool[] {
+  return tools.map(t => ({
+    type: 'function' as const,
+    function: {
+      name: t.name,
+      description: t.description ?? '',
+      parameters: normalizeSchemaForOpenAI(schema, !isGemini),
+    },
+  }))
+}
+```
+
+<Note>
+For Gemini (`CLAUDE_CODE_USE_GEMINI=1`), `normalizeSchemaForOpenAI` is called with `strict=false`, which relaxes the `required` and `additionalProperties` enforcement because Gemini rejects schemas with `required` keys absent from `properties`.
+</Note>
+
+## GitHub Models specifics
+
+When `CLAUDE_CODE_USE_GITHUB=1` is set, the shim applies additional behaviour:
+
+<Steps>
+  <Step title="Base URL">
+    Requests go to `https://models.github.ai/inference` regardless of `OPENAI_BASE_URL`.
+
+    ```typescript
+    const GITHUB_MODELS_DEFAULT_BASE = 'https://models.github.ai/inference'
+    ```
+  </Step>
+  <Step title="Auth header">
+    The GitHub token from `GITHUB_TOKEN` or `GH_TOKEN` is sent as `Authorization: Bearer <token>`.
+  </Step>
+  <Step title="API version header">
+    Every request includes `api-version: 2022-11-28`.
+
+    ```typescript
+    const GITHUB_API_VERSION = '2022-11-28'
+    ```
+  </Step>
+  <Step title="429 retry with exponential backoff">
+    GitHub Models rate-limits aggressively. The shim retries up to 3 times with exponential backoff starting at 1 second, capped at 32 seconds.
+
+    ```typescript
+    const GITHUB_429_MAX_RETRIES = 3
+    const GITHUB_429_BASE_DELAY_SEC = 1
+    const GITHUB_429_MAX_DELAY_SEC = 32
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+  For GitHub Models, set `OPENAI_MODEL` to a qualified model ID like `openai/gpt-4.1` or `github:copilot`. The default when `github:copilot` is requested is `openai/gpt-4.1`.
+</Tip>

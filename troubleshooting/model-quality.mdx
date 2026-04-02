@@ -1,0 +1,111 @@
+---
+title: Model quality
+description: Understand which models work best for agentic coding tasks with OpenClaude.
+---
+
+OpenClaude's agent loop requires a model that can reliably call tools, produce valid structured output, and handle multi-step reasoning chains. Not all models are equally capable at this. This page helps you pick the right model for your use case.
+
+## Quality comparison
+
+| Model | Tool calling | Code quality | Speed |
+|---|---|---|---|
+| GPT-4o | Excellent | Excellent | Fast |
+| DeepSeek-V3 | Great | Great | Fast |
+| Gemini 2.0 Flash | Great | Good | Very Fast |
+| Llama 3.3 70B | Good | Good | Medium |
+| Mistral Large | Good | Good | Fast |
+| GPT-4o-mini | Good | Good | Very Fast |
+| Qwen 2.5 72B | Good | Good | Medium |
+| Smaller models (&lt;7B) | Limited | Limited | Very Fast |
+
+---
+
+## Recommendations by use case
+
+**Best overall:** GPT-4o or DeepSeek-V3. Both have excellent tool calling and produce high-quality code. DeepSeek-V3 is significantly cheaper per token.
+
+**Best local model:** Llama 3.3 70B via Ollama — requires roughly 40 GB of VRAM for full GPU inference. For more modest hardware, `qwen2.5-coder:14b` is the best step down.
+
+**Best speed:** Gemini 2.0 Flash via OpenRouter, or GPT-4o-mini for OpenAI. Both handle tool calling well and are significantly faster than their larger siblings.
+
+**Best reasoning:** DeepSeek-R1 (`deepseek-reasoner`) or GPT-o3-mini for tasks that require extended chain-of-thought reasoning before acting.
+
+**Best low-resource local:** `qwen2.5-coder:7b` — a coding-specialized model that runs on consumer hardware and handles tool calling better than general-purpose models at the same size.
+
+---
+
+## What makes a model work well
+
+OpenClaude's agent loop relies on structured function/tool calling. A compatible model must be able to:
+
+1. **Produce valid JSON for tool call arguments** — malformed output breaks the agent loop immediately
+2. **Stop after issuing a tool call** — the model must yield control and wait for the tool result before continuing
+3. **Resume correctly after receiving tool results** — the model must incorporate the result into its next reasoning step
+4. **Handle multi-step chains** — complex tasks require many sequential tool calls across a long context window
+
+Models under 7B parameters frequently fail at steps 1 and 2. Larger models or models explicitly fine-tuned for tool/function calling perform significantly better in practice.
+
+<Warning>
+  If you see the agent repeating the same action in a loop or producing empty tool call arguments, the model does not support tool calling well enough for agentic use. Switch to a larger model.
+</Warning>
+
+---
+
+## Choosing a local model for Ollama
+
+For coding tasks, these are the recommended Ollama models in order of quality:
+
+1. `llama3.3:70b` — best quality, requires strong hardware (~40 GB VRAM)
+2. `qwen2.5-coder:14b` — good quality, moderate hardware
+3. `qwen2.5-coder:7b` — decent quality, lighter hardware requirement
+4. `llama3.1:8b` — general purpose, fast, widely tested default
+
+Pull any of these before use:
+
+```bash
+ollama pull qwen2.5-coder:14b
+```
+
+Then switch to it with a profile command:
+
+```bash
+bun run profile:init -- --provider ollama --model qwen2.5-coder:14b
+bun run dev:profile
+```
+
+Or use the preset shortcuts:
+
+```bash
+bun run profile:fast   # llama3.2:3b — lowest latency
+bun run profile:code   # qwen2.5-coder:7b — best coding at lighter weight
+```
+
+<Tip>
+  Run `bun run profile:recommend -- --goal coding` to automatically rank all Ollama models you have installed and recommend the best one for coding tasks on your hardware.
+</Tip>
+
+---
+
+## Provider-specific notes
+
+<AccordionGroup>
+  <Accordion title="OpenAI">
+    `gpt-4o` is the most reliable choice. `gpt-4o-mini` works well for faster, cheaper tasks where code quality requirements are lower. Avoid `gpt-3.5-turbo` for agentic use — its tool calling is less consistent.
+  </Accordion>
+
+  <Accordion title="DeepSeek">
+    Use `deepseek-chat` for DeepSeek-V3. It matches GPT-4o quality at a fraction of the cost and has strong tool calling support. Use `deepseek-reasoner` for tasks that benefit from extended reasoning before action.
+  </Accordion>
+
+  <Accordion title="Gemini via OpenRouter">
+    Use model ID `google/gemini-2.0-flash-001`. OpenRouter model IDs change over time — if this model stops working, check [openrouter.ai/models](https://openrouter.ai/models) for the current Gemini Flash model ID before assuming the integration is broken.
+  </Accordion>
+
+  <Accordion title="Ollama (local)">
+    Install Ollama from [ollama.com/download](https://ollama.com/download) and pull your chosen model before launching OpenClaude. Run `ollama ps` to confirm the model is loaded and check whether it is running on GPU or CPU. CPU-only inference is valid but significantly slower for large models.
+  </Accordion>
+
+  <Accordion title="Codex (codexplan / codexspark)">
+    `codexplan` maps to GPT-5.4 on the Codex backend with high reasoning. `codexspark` maps to GPT-5.3 Codex Spark for faster loops. Both require either `~/.codex/auth.json` from an existing Codex CLI setup or an explicit `CODEX_API_KEY`.
+  </Accordion>
+</AccordionGroup>

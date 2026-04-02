@@ -1,0 +1,140 @@
+---
+title: Provider profiles
+description: Persist provider and model settings to a local file so you can launch OpenClaude without re-setting environment variables each session.
+---
+
+Provider profiles save your provider, model, and API key to a local file (`.openclaude-profile.json`) in your project directory. After a one-time setup you launch OpenClaude with a single command.
+
+<Warning>
+Provider profiles require a source build with Bun. They are **not** available when installing from npm (`npm install -g @gitlawb/openclaude`). Clone the repository, run `bun install && bun run build`, then use these commands.
+</Warning>
+
+## Initialize a profile
+
+Run `profile:init` once to create the profile file. Pass `--provider` to pick a provider and either `--model` or `--goal` to select a model.
+
+<Tabs>
+  <Tab title="OpenAI">
+    ```bash
+    bun run profile:init -- --provider openai --api-key sk-... --model gpt-4o
+    ```
+  </Tab>
+  <Tab title="Ollama">
+    ```bash
+    # pick a specific model
+    bun run profile:init -- --provider ollama --model llama3.1:8b
+
+    # or let OpenClaude auto-select the best installed model for your goal
+    bun run profile:init -- --provider ollama --goal coding
+    ```
+
+    Make sure Ollama is running (`ollama serve`) before initializing.
+  </Tab>
+  <Tab title="Atomic Chat">
+    ```bash
+    bun run profile:init -- --provider atomic-chat
+    ```
+
+    Atomic Chat is a local Apple Silicon LLM app running at `127.0.0.1:1337`. The model is auto-detected from the running app — no model flag needed.
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    # uses ~/.codex/auth.json or CODEX_API_KEY automatically
+    bun run profile:codex
+
+    # or initialize with a fast Codex model explicitly
+    bun run profile:init -- --provider codex --model codexspark
+    ```
+  </Tab>
+</Tabs>
+
+### `profile:init` options
+
+| Option | Description |
+|--------|-------------|
+| `--provider` | Provider to use: `openai`, `ollama`, `atomic-chat`, or `codex` |
+| `--api-key` | API key to store in the profile (OpenAI providers) |
+| `--model` | Model name to use, e.g. `gpt-4o`, `llama3.1:8b`, `codexspark` |
+| `--goal` | Auto-select a model optimized for `coding`, `latency`, or `balanced` |
+
+## Launch with a saved profile
+
+```bash
+bun run dev:profile
+```
+
+This reads `.openclaude-profile.json` and starts OpenClaude with the stored settings. If no profile file exists yet, it falls back to goal-aware defaults when picking an initial model.
+
+## Preset launch shortcuts
+
+Use these shortcuts to skip profile setup entirely for common providers. Each command runs `doctor:runtime` first and only launches OpenClaude if the checks pass.
+
+<CardGroup cols={2}>
+  <Card title="dev:fast" icon="bolt">
+    Ollama with `llama3.2:3b` — lowest latency local model
+  </Card>
+  <Card title="dev:code" icon="code">
+    Ollama with `qwen2.5-coder:7b` — better code quality
+  </Card>
+  <Card title="dev:openai" icon="cloud">
+    OpenAI — reads `OPENAI_API_KEY` from your shell
+  </Card>
+  <Card title="dev:ollama" icon="server">
+    Ollama at `localhost:11434` — uses profile model or `llama3.1:8b`
+  </Card>
+  <Card title="dev:atomic-chat" icon="microchip">
+    Atomic Chat at `127.0.0.1:1337` — Apple Silicon local models
+  </Card>
+  <Card title="dev:codex" icon="robot">
+    Codex backend — reads `CODEX_API_KEY` or `~/.codex/auth.json`
+  </Card>
+</CardGroup>
+
+```bash
+bun run dev:fast         # llama3.2:3b (Ollama)
+bun run dev:code         # qwen2.5-coder:7b (Ollama)
+bun run dev:openai       # OpenAI (reads OPENAI_API_KEY from shell)
+bun run dev:ollama       # Ollama — profile model or llama3.1:8b
+bun run dev:atomic-chat  # Atomic Chat at 127.0.0.1:1337
+bun run dev:codex        # Codex backend
+```
+
+## Get a recommendation
+
+Preview the best provider and model for your goal before saving anything:
+
+```bash
+# preview recommendation only — does not save
+bun run profile:recommend -- --goal coding --benchmark
+
+# preview and automatically save the recommendation as your profile
+bun run profile:auto -- --goal latency
+```
+
+Available goals: `latency`, `balanced`, `coding`.
+
+`profile:recommend` ranks installed Ollama models and configured cloud providers by the chosen goal. `profile:auto` is not local-only — it falls back to OpenAI when no viable local model is installed.
+
+<Tip>
+Use `--provider ollama` with `profile:init` when you want to guarantee a local-only path. Auto mode (`profile:auto`) can silently switch to OpenAI if no local model is available.
+</Tip>
+
+## Bun preset model shortcuts
+
+These commands set the profile model directly without launching OpenClaude:
+
+```bash
+bun run profile:fast   # sets: ollama / llama3.2:3b
+bun run profile:code   # sets: ollama / qwen2.5-coder:7b
+```
+
+## Profile file
+
+The profile is stored as `.openclaude-profile.json` in your current directory.
+
+```bash
+# inspect the profile
+cat .openclaude-profile.json
+```
+
+The file is gitignored by default. Do not commit it — it may contain your API key.

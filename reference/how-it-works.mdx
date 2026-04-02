@@ -1,0 +1,111 @@
+---
+title: How it works
+description: Architecture overview of OpenClaude's provider shim and the files changed from the original Claude Code.
+---
+
+OpenClaude inserts a translation layer between Claude Code's tool system and the LLM API. Every tool, slash command, sub-agent, and MCP integration runs unchanged — only the transport layer is replaced.
+
+## Architecture
+
+```text
+Claude Code Tool System
+        |
+        v
+  Anthropic SDK interface (duck-typed)
+        |
+        v
+  openaiShim.ts  ← translates formats
+        |
+        v
+  OpenAI Chat Completions API
+        |
+        v
+  Any compatible model
+```
+
+`src/services/api/openaiShim.ts` duck-types the Anthropic SDK interface. The rest of the codebase calls `anthropic.beta.messages.create` as normal — the shim intercepts those calls and translates them into OpenAI chat completion requests, then converts the responses back into Anthropic streaming events.
+
+## What the shim translates
+
+| Anthropic format | OpenAI format |
+|-----------------|---------------|
+| Message content blocks | `messages` array |
+| `tool_use` blocks | `tool_calls` in assistant message |
+| `tool_result` blocks | `role: "tool"` messages |
+| SSE streaming events | OpenAI SSE → Anthropic `content_block_*` events |
+| System prompt arrays | Single `role: "system"` message |
+| Base64 and URL images | `image_url` content parts |
+| `thinking` blocks | Wrapped as `<thinking>` text |
+
+## How providers are selected
+
+`src/services/api/client.ts` checks `CLAUDE_CODE_USE_OPENAI` at startup and routes to the shim when it is set to `1`. All other code paths continue to use the standard Anthropic SDK.
+
+<Tabs>
+  <Tab title="OpenAI-compatible">
+    Set `CLAUDE_CODE_USE_OPENAI=1` plus `OPENAI_API_KEY` and optionally `OPENAI_BASE_URL`. The shim routes to `https://api.openai.com/v1` by default, or to whatever base URL you provide.
+
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-your-key-here
+    export OPENAI_MODEL=gpt-4o
+    openclaude
+    ```
+  </Tab>
+  <Tab title="GitHub Models">
+    Set `CLAUDE_CODE_USE_GITHUB=1` with a GitHub PAT. You do not also need `CLAUDE_CODE_USE_OPENAI`.
+
+    ```bash
+    export CLAUDE_CODE_USE_GITHUB=1
+    export GITHUB_TOKEN=ghp_your-token-here
+    export OPENAI_MODEL=openai/gpt-4.1
+    openclaude
+    ```
+
+    The shim routes to `https://models.github.ai/inference` and adds the required `api-version: 2022-11-28` header automatically.
+  </Tab>
+  <Tab title="Codex backend">
+    Use a Codex alias model (`codexplan`, `codexspark`, or any `gpt-5.*-codex` identifier). The shim detects the alias and switches to the `POST /responses` endpoint instead of chat completions.
+
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export CODEX_API_KEY=your-codex-key
+    export OPENAI_MODEL=codexplan
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+## Codex backend
+
+The Codex shim (`src/services/api/codexShim.ts`) handles a separate transport: the ChatGPT Codex `POST /responses` endpoint. The shim detects Codex model aliases and routes those requests through the Codex path automatically. Credentials are read from `CODEX_API_KEY` or from `~/.codex/auth.json`.
+
+Supported Codex aliases:
+
+| Alias | Resolved model | Reasoning effort |
+|-------|---------------|-----------------|
+| `codexplan` | `gpt-5.4` | `high` |
+| `codexspark` | `gpt-5.3-codex-spark` | — |
+| `gpt-5.4` | `gpt-5.4` | `high` |
+| `gpt-5.3-codex` | `gpt-5.3-codex` | `high` |
+| `gpt-5.3-codex-spark` | `gpt-5.3-codex-spark` | — |
+| `gpt-5.2-codex` | `gpt-5.2-codex` | `high` |
+| `gpt-5.1-codex-max` | `gpt-5.1-codex-max` | `high` |
+| `gpt-5.1-codex-mini` | `gpt-5.1-codex-mini` | — |
+| `gpt-5.4-mini` | `gpt-5.4-mini` | `medium` |
+| `gpt-5.2` | `gpt-5.2` | `medium` |
+
+## Files changed from the original Claude Code
+
+Only six files were modified. Everything else is the original Claude Code source.
+
+| File | Change |
+|------|--------|
+| `src/services/api/openaiShim.ts` | **New** — OpenAI-compatible API shim |
+| `src/services/api/client.ts` | Routes to shim when `CLAUDE_CODE_USE_OPENAI=1` |
+| `src/utils/model/providers.ts` | Added `openai` provider type |
+| `src/utils/model/configs.ts` | Added OpenAI model mappings |
+| `src/utils/model/model.ts` | Respects `OPENAI_MODEL` for defaults |
+| `src/utils/auth.ts` | Recognizes OpenAI as valid third-party provider |
+
+<Note>786 lines added. Zero new dependencies.</Note>

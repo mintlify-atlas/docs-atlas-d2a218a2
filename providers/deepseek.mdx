@@ -1,0 +1,44 @@
+---
+title: DeepSeek
+description: Use DeepSeek-V3 and DeepSeek-R1 with OpenClaude.
+---
+
+DeepSeek offers high-quality models at a competitive price point, with strong tool calling support that works well for agentic coding tasks.
+
+## Setup
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-your-deepseek-key
+    export OPENAI_BASE_URL=https://api.deepseek.com/v1
+    export OPENAI_MODEL=deepseek-chat
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-your-deepseek-key"
+    $env:OPENAI_BASE_URL="https://api.deepseek.com/v1"
+    $env:OPENAI_MODEL="deepseek-chat"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+Get an API key at [platform.deepseek.com](https://platform.deepseek.com/).
+
+## Models
+
+| Model | Description |
+|-------|-------------|
+| `deepseek-chat` | DeepSeek-V3 — fast, strong coding and tool use |
+| `deepseek-reasoner` | DeepSeek-R1 — reasoning model for complex problems |
+
+`deepseek-chat` is the recommended starting point. It has excellent tool calling support and is one of the most cost-effective options for high-quality agentic output.
+
+`deepseek-reasoner` (R1) is suited to tasks that benefit from extended chain-of-thought reasoning, such as algorithm design or debugging complex logic. It is slower and more expensive per token.

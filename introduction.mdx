@@ -1,0 +1,69 @@
+---
+title: Introduction
+description: Use Claude Code with any LLM — OpenAI, Gemini, DeepSeek, Ollama, and 200+ models.
+---
+
+OpenClaude is a fork of Claude Code that replaces the Anthropic-only backend with an OpenAI-compatible provider shim. You get Claude Code's full agent loop, tool system, and slash commands — powered by whatever model you choose.
+
+<CardGroup cols={2}>
+  <Card title="macOS / Linux quickstart" icon="terminal" href="/quickstart">
+    Get running in minutes on macOS or Linux.
+  </Card>
+  <Card title="Windows quickstart" icon="windows" href="/quickstart-windows">
+    Step-by-step setup for Windows PowerShell.
+  </Card>
+  <Card title="Provider setup" icon="plug" href="/providers/openai">
+    Connect OpenAI, Ollama, DeepSeek, Gemini, Codex, and more.
+  </Card>
+  <Card title="How it works" icon="code" href="/reference/how-it-works">
+    Understand the OpenAI shim and architecture.
+  </Card>
+</CardGroup>
+
+## What OpenClaude does
+
+OpenClaude intercepts Claude Code's Anthropic SDK calls and translates them into OpenAI chat completion requests. The rest of the codebase runs unchanged — tools, memory, slash commands, sub-agents, MCP — all work as normal, just backed by your chosen model.
+
+## What works
+
+- **All tools** — Bash, FileRead, FileWrite, FileEdit, Glob, Grep, WebFetch, WebSearch, Agent, MCP, LSP, NotebookEdit, Tasks
+- **Streaming** — Real-time token streaming
+- **Tool calling** — Multi-step tool chains where the model calls tools, receives results, and continues
+- **Images** — Base64 and URL images passed to vision models
+- **Slash commands** — `/commit`, `/review`, `/compact`, `/diff`, `/doctor`, and more
+- **Sub-agents** — AgentTool spawns sub-agents using the same provider
+- **Memory** — Persistent memory system
+
+## What's different from Claude Code
+
+- **No thinking mode** — Anthropic's extended thinking is disabled; OpenAI models use different reasoning
+- **No prompt caching** — Anthropic-specific cache headers are skipped
+- **No beta features** — Anthropic-specific beta headers are ignored
+- **Token limits** — Defaults to 32K max output; some models may cap lower, handled gracefully
+
+## Supported providers
+
+Any service that speaks the OpenAI chat completions API works. Tested integrations include:
+
+| Provider | Notes |
+|----------|-------|
+| OpenAI | GPT-4o, GPT-4o-mini, o1, o3, and others |
+| DeepSeek | deepseek-chat, deepseek-reasoner |
+| Google Gemini | Via OpenRouter or direct |
+| Ollama | Any locally pulled model |
+| Codex | codexplan (GPT-5.4) and codexspark backends |
+| Atomic Chat | Local inference on Apple Silicon |
+| LM Studio | Local models via REST API |
+| Together AI | Cloud inference for open models |
+| Groq | Fast inference for Llama, Mixtral |
+| Mistral | mistral-large and others |
+| Azure OpenAI | Your Azure deployment |
+| GitHub Models | Via models.github.ai inference |
+
+## Installation
+
+```bash
+npm install -g @gitlawb/openclaude
+```
+
+Requires Node.js 20 or newer.

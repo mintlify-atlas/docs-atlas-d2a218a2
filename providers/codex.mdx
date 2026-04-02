@@ -1,0 +1,104 @@
+---
+title: Codex
+description: Use the ChatGPT Codex backend — codexplan and codexspark — with OpenClaude.
+---
+
+OpenClaude supports the ChatGPT Codex backend directly via a dedicated responses transport. This gives access to `codexplan` and `codexspark`, which are aliases for GPT-5-series Codex models.
+
+## Model aliases
+
+| Alias | Resolves to | Reasoning effort |
+|-------|-------------|-----------------|
+| `codexplan` | `gpt-5.4` | High |
+| `codexspark` | `gpt-5.3-codex-spark` | Standard |
+
+`codexplan` is the primary planning model with high reasoning effort. `codexspark` is a faster variant suited for shorter loops and interactive tasks.
+
+## Setup
+
+If you already have the Codex CLI installed, OpenClaude reads `~/.codex/auth.json` automatically. No additional credentials are needed:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_MODEL=codexplan
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_MODEL="codexplan"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+## Manual auth
+
+If you do not have a Codex CLI auth file, provide the token directly with `CODEX_API_KEY`:
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_MODEL=codexplan
+    export CODEX_API_KEY=your-codex-or-chatgpt-token
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_MODEL="codexplan"
+    $env:CODEX_API_KEY="your-codex-or-chatgpt-token"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+To point to a custom auth file location, use `CODEX_AUTH_JSON_PATH`:
+
+```bash
+export CODEX_AUTH_JSON_PATH=/path/to/your/auth.json
+```
+
+To override the entire Codex home directory (which contains `auth.json`), use `CODEX_HOME`:
+
+```bash
+export CODEX_HOME=/path/to/codex-home
+```
+
+## Profile launcher
+
+If you are running from source with Bun, use the dedicated Codex launchers:
+
+```bash
+# bootstrap a Codex profile (reads CODEX_API_KEY or ~/.codex/auth.json)
+bun run profile:codex
+
+# launch with the Codex profile (runs doctor:runtime first)
+bun run dev:codex
+```
+
+`dev:codex` validates credentials and probes the `/responses` endpoint before launching. It will exit early with a clear error if auth is missing or the endpoint is unreachable.
+
+To bootstrap with the faster `codexspark` alias:
+
+```bash
+bun run profile:init -- --provider codex --model codexspark
+bun run dev:profile
+```
+
+## Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `CODEX_API_KEY` | Codex or ChatGPT access token. Takes priority over `auth.json`. |
+| `CODEX_AUTH_JSON_PATH` | Path to a Codex CLI `auth.json` file. Overrides the default `~/.codex/auth.json`. |
+| `CODEX_HOME` | Alternative Codex home directory. `auth.json` is read from `$CODEX_HOME/auth.json`. |

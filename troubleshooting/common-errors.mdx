@@ -1,0 +1,185 @@
+---
+title: Common errors
+description: Fix the most common OpenClaude setup and runtime errors.
+---
+
+<AccordionGroup>
+
+  <Accordion title="`openclaude` command not found">
+    **Cause:** npm installed the package but your terminal session has not refreshed its PATH yet. This is common immediately after running `npm install -g`.
+
+    **Fix:**
+
+    1. Close the current terminal window completely
+    2. Open a new terminal
+    3. Run `openclaude` again
+
+    On Windows, also verify that the npm global bin directory is in your system PATH:
+
+    ```powershell
+    npm config get prefix
+    ```
+
+    The `bin` subdirectory of that path (e.g. `C:\Users\you\AppData\Roaming\npm`) must be listed in your `Path` environment variable. Add it via **System Properties → Environment Variables** if it is missing, then open a new terminal.
+  </Accordion>
+
+  <Accordion title="Invalid API key / Authentication failed">
+    **Cause:** The API key is wrong, expired, revoked, or was copied with leading or trailing whitespace.
+
+    **Fix:**
+
+    1. Generate a fresh key from your provider's dashboard
+    2. When pasting, check carefully for extra spaces at the start or end
+    3. Re-export the variable and retry
+
+    ```bash
+    export OPENAI_API_KEY=sk-your-real-key-here
+    openclaude
+    ```
+
+    On Windows PowerShell:
+
+    ```powershell
+    $env:OPENAI_API_KEY="sk-your-real-key-here"
+    openclaude
+    ```
+  </Accordion>
+
+  <Accordion title="Provider reachability failed (Ollama not running)">
+    **Cause:** Ollama is installed but the service is not running. OpenClaude cannot reach `http://localhost:11434/v1`.
+
+    **Fix:** Start Ollama in a separate terminal:
+
+    ```bash
+    ollama serve
+    ```
+
+    Then, in your original terminal, re-run the health check:
+
+    ```bash
+    bun run doctor:runtime
+    ```
+
+    On Windows, Ollama may be configured to run as a background service. Check the system tray for the Ollama icon. If it is present, Ollama is already running and the issue may be a firewall or port conflict on `11434`.
+  </Accordion>
+
+  <Accordion title="Missing key for non-local provider URL">
+    **Cause:** `OPENAI_BASE_URL` is set to a remote endpoint (not localhost or 127.0.0.1) but `OPENAI_API_KEY` is missing or empty. Remote providers always require a key.
+
+    **Fix:**
+
+    If you intended to use a remote cloud provider, set the API key:
+
+    ```bash
+    export OPENAI_API_KEY=your-key-here
+    ```
+
+    If you intended to use Ollama locally, re-initialize the profile to point back to localhost:
+
+    ```bash
+    bun run profile:init -- --provider ollama --model llama3.1:8b
+    ```
+
+    Or let OpenClaude choose the best local model automatically:
+
+    ```bash
+    bun run profile:init -- --provider ollama --goal balanced
+    ```
+  </Accordion>
+
+  <Accordion title="Placeholder key error (e.g. `SUA_CHAVE`)">
+    **Cause:** A placeholder string was used instead of a real API key. `doctor:runtime` detects common placeholder patterns and fails fast rather than letting the request reach your provider and return a confusing auth error.
+
+    **Fix:**
+
+    - For OpenAI, DeepSeek, Mistral, or any other cloud provider: replace the placeholder with a real key from your provider's dashboard
+    - For Ollama or other local providers: no key is needed at all — set `OPENAI_BASE_URL` to your local address and leave `OPENAI_API_KEY` unset
+
+    ```bash
+    # Ollama — no key required
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_BASE_URL=http://localhost:11434/v1
+    export OPENAI_MODEL=llama3.1:8b
+    ```
+  </Accordion>
+
+  <Accordion title="`ripgrep not found`">
+    **Cause:** OpenClaude uses `rg` (ripgrep) for the `Grep` tool. If `rg` is not on your PATH, grep-based operations fail.
+
+    **Fix:** Install ripgrep system-wide and confirm it works before starting OpenClaude:
+
+    ```bash
+    # macOS
+    brew install ripgrep
+
+    # Ubuntu / Debian
+    sudo apt install ripgrep
+
+    # Windows (winget)
+    winget install BurntSushi.ripgrep.MSVC
+    ```
+
+    After installing, open a new terminal and verify:
+
+    ```bash
+    rg --version
+    ```
+
+    Then start `openclaude` again.
+  </Accordion>
+
+  <Accordion title="Model not found / 404 from provider">
+    **Cause:** The model name in `OPENAI_MODEL` does not exist on the configured provider, or the model has been renamed or removed.
+
+    **Fix:** Verify the exact model ID from your provider's documentation or model listing.
+
+    For OpenRouter, model availability changes over time. Check the current list at [openrouter.ai/models](https://openrouter.ai/models) and update `OPENAI_MODEL` to match. For example:
+
+    ```bash
+    export OPENAI_MODEL=google/gemini-2.0-flash-001
+    ```
+
+    For Ollama, the model must be pulled locally before use:
+
+    ```bash
+    ollama pull llama3.3:70b
+    ```
+  </Accordion>
+
+  <Accordion title="Tool calling failures / model loops without progress">
+    **Cause:** The model does not reliably support structured function/tool calling. Symptoms include the model repeating the same step, producing malformed tool call JSON, or never stopping after issuing a tool call.
+
+    **Fix:** Switch to a model with strong tool calling support. The most reliable choices are:
+
+    - `gpt-4o` (OpenAI)
+    - `deepseek-chat` (DeepSeek-V3)
+    - `llama3.3:70b` (Ollama, local)
+
+    See [Model quality](/troubleshooting/model-quality) for a full comparison. Models under 7B parameters often cannot handle multi-step tool chains reliably.
+  </Accordion>
+
+  <Accordion title="Script not found when running `bun run dev`">
+    **Cause:** You ran the command from the wrong directory. Bun reads `package.json` from the current folder; if you are not in the OpenClaude repository root, it cannot find the `dev` script.
+
+    **Fix:** Change to the repository root before running any `bun run` command:
+
+    ```bash
+    cd /path/to/openclaude
+    bun run dev:profile
+    ```
+
+    On Windows:
+
+    ```powershell
+    cd C:\Users\you\Documents\openclaude
+    bun run dev:profile
+    ```
+
+    Confirm you are in the right place by checking that `package.json` exists:
+
+    ```bash
+    ls package.json
+    ```
+  </Accordion>
+
+</AccordionGroup>

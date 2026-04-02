@@ -1,0 +1,77 @@
+---
+title: Gemini
+description: Use Google Gemini models with OpenClaude — via the native Gemini provider or through OpenRouter.
+---
+
+OpenClaude supports Gemini through two paths: a native Gemini provider (`CLAUDE_CODE_USE_GEMINI=1`) and via [OpenRouter](https://openrouter.ai/), which provides an OpenAI-compatible endpoint.
+
+## Native Gemini provider
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_GEMINI=1
+    export GEMINI_API_KEY=your-gemini-api-key
+    export GEMINI_MODEL=gemini-2.0-flash
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_GEMINI="1"
+    $env:GEMINI_API_KEY="your-gemini-api-key"
+    $env:GEMINI_MODEL="gemini-2.0-flash"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+Get a Gemini API key at [aistudio.google.com](https://aistudio.google.com/).
+
+## Setup via OpenRouter
+
+Alternatively, access Gemini through OpenRouter using the standard OpenAI shim:
+
+## Setup via OpenRouter
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-or-your-openrouter-key
+    export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+    export OPENAI_MODEL=google/gemini-2.0-flash-001
+
+    openclaude
+    ```
+  </Tab>
+  <Tab title="Windows PowerShell">
+    ```powershell
+    $env:CLAUDE_CODE_USE_OPENAI="1"
+    $env:OPENAI_API_KEY="sk-or-your-openrouter-key"
+    $env:OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+    $env:OPENAI_MODEL="google/gemini-2.0-flash-001"
+
+    openclaude
+    ```
+  </Tab>
+</Tabs>
+
+Get an OpenRouter API key at [openrouter.ai](https://openrouter.ai/).
+
+## Recommended models
+
+| Model | Description |
+|-------|-------------|
+| `google/gemini-2.0-flash-001` | Fast, very cost-effective, good for most coding tasks |
+| `google/gemini-2.5-pro` | Highest capability, best for complex multi-step agentic work |
+
+<Note>
+OpenRouter model availability and IDs change over time. If a model ID stops working, check the [OpenRouter models list](https://openrouter.ai/models) for current IDs before assuming the integration is broken.
+</Note>
+
+## Notes
+
+OpenRouter also provides access to many models beyond Gemini. Any model listed on OpenRouter can be used with OpenClaude by setting `OPENAI_MODEL` to its OpenRouter model ID (e.g. `anthropic/claude-3.5-sonnet`, `meta-llama/llama-3.3-70b-instruct`).

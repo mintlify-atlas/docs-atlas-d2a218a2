@@ -1,0 +1,69 @@
+---
+title: Slash commands
+description: Built-in slash commands available in the OpenClaude interactive CLI session.
+---
+
+Slash commands are invoked by typing `/` followed by the command name inside an active OpenClaude session. All commands are inherited from the original Claude Code and work with any provider.
+
+<Tip>
+  Type `/help` in any session to see all available commands with current descriptions.
+</Tip>
+
+## Core workflow
+
+| Command | Description |
+|---------|-------------|
+| `/commit` | Stage and commit changes with an AI-generated commit message |
+| `/review` | Review staged or unstaged changes |
+| `/diff` | Show a diff of current working-tree changes |
+| `/compact` | Compact conversation context to reduce token usage |
+| `/doctor` | Run provider and environment health checks |
+| `/help` | List all available commands |
+| `/exit` | Exit the session |
+
+## Model and config
+
+| Command | Description |
+|---------|-------------|
+| `/model` | Show or switch the current model |
+| `/config` | View or update configuration values |
+| `/memory` | View or edit persistent memory |
+| `/clear` | Clear the current conversation history |
+| `/version` | Show the OpenClaude version |
+
+## Session
+
+| Command | Description |
+|---------|-------------|
+| `/plan` | Enter plan mode — outline steps before executing |
+| `/resume` | Resume a previous session |
+| `/session` | View info about the current session |
+| `/stats` | Show token usage and cost statistics |
+| `/cost` | Show cost breakdown for the current session |
+| `/usage` | Show a usage summary |
+
+## Sharing and export
+
+| Command | Description |
+|---------|-------------|
+| `/share` | Share the current session |
+| `/export` | Export the conversation or context |
+| `/copy` | Copy output to clipboard |
+
+## Tasks
+
+| Command | Description |
+|---------|-------------|
+| `/tasks` | List background tasks |
+
+## MCP
+
+| Command | Description |
+|---------|-------------|
+| `/mcp` | Manage MCP server connections from inside the session |
+
+## Notes
+
+- Commands are inherited from the original Claude Code source and work with any provider through the OpenAI shim.
+- A small number of commands surface Anthropic-specific features (such as extended thinking or prompt caching) that are not available on non-Anthropic providers. Those commands still run but the underlying feature is silently skipped.
+- The full command list is large — the `src/commands/` directory contains over 100 entries, many of which are experimental or platform-specific. Use `/help` inside the session to see what is active for your build.

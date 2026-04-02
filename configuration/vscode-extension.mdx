@@ -1,0 +1,96 @@
+---
+title: VS Code extension
+description: Launch OpenClaude from inside VS Code and apply the OpenClaude Terminal Black theme.
+---
+
+The repository ships a VS Code extension at `vscode-extension/openclaude-vscode`. It is not published to the VS Code Marketplace, so you install it locally from a packaged `.vsix` file.
+
+## What the extension provides
+
+<CardGroup cols={2}>
+  <Card title="Terminal launch" icon="terminal">
+    **OpenClaude: Launch in Terminal** — opens a dedicated terminal panel and starts OpenClaude with one command, no manual environment variable typing
+  </Card>
+  <Card title="Control Center" icon="sidebar-left">
+    A sidebar panel in the Activity Bar with quick links to launch OpenClaude, open the repository, and open the theme picker
+  </Card>
+  <Card title="OpenClaude Terminal Black" icon="moon">
+    A built-in dark color theme with low-glare backgrounds and neon accents, tuned for OpenClaude's terminal output
+  </Card>
+  <Card title="VS Code commands" icon="command">
+    `OpenClaude: Open Control Center`, `OpenClaude: Launch in Terminal`, `OpenClaude: Open Repository`
+  </Card>
+</CardGroup>
+
+## Requirements
+
+- VS Code `1.95` or newer
+- `openclaude` available in your `PATH` (install with `npm install -g @gitlawb/openclaude` or use a source build)
+
+## Install the extension
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://node.gitlawb.com/z6MkqDnb7Siv3Cwj7pGJq4T5EsUisECqR8KpnDLwcaZq5TPr/openclaude.git
+    cd openclaude/vscode-extension/openclaude-vscode
+    ```
+  </Step>
+  <Step title="Install dependencies and package the extension">
+    ```bash
+    npm install
+    npm run package
+    ```
+
+    This produces a `.vsix` file (for example, `openclaude-vscode-0.1.1.vsix`) in the current directory.
+  </Step>
+  <Step title="Install the .vsix in VS Code">
+    Open the Command Palette (`Ctrl+Shift+P` on Windows/Linux, `Cmd+Shift+P` on macOS), run **Extensions: Install from VSIX**, and select the `.vsix` file you just created.
+  </Step>
+</Steps>
+
+## Using the theme
+
+After installing the extension, apply the theme:
+
+1. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. Run **Preferences: Color Theme**
+3. Select **OpenClaude Terminal Black**
+
+## Extension settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `openclaude.launchCommand` | `openclaude` | The shell command used to start OpenClaude |
+| `openclaude.terminalName` | `OpenClaude` | Name shown on the terminal tab |
+| `openclaude.useOpenAIShim` | `false` | When set to `true`, sets `CLAUDE_CODE_USE_OPENAI=1` in launched OpenClaude terminals |
+
+## Provider configuration
+
+The extension reads provider settings from your shell environment. There are two ways to make them available inside VS Code terminals:
+
+<Accordion title="Option 1: Set variables in your shell profile">
+  Add your environment variables to `~/.bashrc`, `~/.zshrc`, or `~/.profile` (depending on your shell):
+
+  ```bash
+  export CLAUDE_CODE_USE_OPENAI=1
+  export OPENAI_API_KEY=sk-your-key-here
+  export OPENAI_MODEL=gpt-4o
+  ```
+
+  Restart VS Code after editing your shell profile so the terminal picks up the new values.
+</Accordion>
+
+<Accordion title="Option 2: Set variables in VS Code terminal profile settings">
+  Open **Settings** (`Ctrl+,` / `Cmd+,`), search for `terminal.integrated.env`, and add your variables to the appropriate platform block in `settings.json`:
+
+  ```json
+  "terminal.integrated.env.osx": {
+    "CLAUDE_CODE_USE_OPENAI": "1",
+    "OPENAI_API_KEY": "sk-your-key-here",
+    "OPENAI_MODEL": "gpt-4o"
+  }
+  ```
+
+  Use `terminal.integrated.env.linux` or `terminal.integrated.env.windows` for other platforms.
+</Accordion>

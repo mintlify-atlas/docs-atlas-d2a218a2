@@ -1,0 +1,156 @@
+---
+title: More providers
+description: Connect OpenClaude to LM Studio, Atomic Chat, Together AI, Groq, Mistral, AWS Bedrock, Google Vertex AI, and any OpenAI-compatible API.
+---
+
+Any service that exposes an OpenAI-compatible `/v1/chat/completions` endpoint works with OpenClaude. Set `OPENAI_BASE_URL` to the endpoint and `OPENAI_MODEL` to the model name. This page also covers native integrations for AWS Bedrock and Google Vertex AI.
+
+## LM Studio
+
+[LM Studio](https://lmstudio.ai/) lets you download and run models locally with a GUI on macOS, Windows, and Linux.
+
+<Steps>
+  <Step title="Install and open LM Studio">
+    Download from [lmstudio.ai](https://lmstudio.ai/) and install it.
+  </Step>
+  <Step title="Load a model and start the server">
+    In LM Studio, go to the **Local Server** tab, load a model, and click **Start Server**. The default port is `1234`.
+  </Step>
+  <Step title="Set the variables and launch">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_BASE_URL=http://localhost:1234/v1
+    export OPENAI_MODEL=your-model-name
+
+    openclaude
+    ```
+
+    No API key is needed for local LM Studio.
+  </Step>
+</Steps>
+
+## Atomic Chat (Apple Silicon)
+
+[Atomic Chat](https://atomic.chat/) provides local inference optimized for Apple Silicon Macs.
+
+<Steps>
+  <Step title="Install Atomic Chat">
+    Download from [atomic.chat](https://atomic.chat/) and install the app.
+  </Step>
+  <Step title="Start the app and load a model">
+    Open Atomic Chat and load a model. The local server runs at `127.0.0.1:1337` by default.
+  </Step>
+  <Step title="Set the variables and launch">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_BASE_URL=http://127.0.0.1:1337/v1
+    export OPENAI_MODEL=your-model-name
+
+    openclaude
+    ```
+
+    No API key is needed. The app must be running with a model loaded before launching OpenClaude.
+  </Step>
+</Steps>
+
+If you are running from source with Bun, use the preset launcher:
+
+```bash
+bun run dev:atomic-chat
+```
+
+## Together AI
+
+[Together AI](https://together.ai/) provides fast hosted inference for open-weight models.
+
+```bash
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_API_KEY=your-together-key
+export OPENAI_BASE_URL=https://api.together.xyz/v1
+export OPENAI_MODEL=meta-llama/Llama-3.3-70B-Instruct-Turbo
+
+openclaude
+```
+
+Get an API key at [together.ai](https://together.ai/).
+
+## Groq
+
+[Groq](https://groq.com/) offers very fast inference on custom LPU hardware.
+
+```bash
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_API_KEY=gsk_your-groq-key
+export OPENAI_BASE_URL=https://api.groq.com/openai/v1
+export OPENAI_MODEL=llama-3.3-70b-versatile
+
+openclaude
+```
+
+Get an API key at [console.groq.com](https://console.groq.com/).
+
+## Mistral
+
+```bash
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_API_KEY=your-mistral-key
+export OPENAI_BASE_URL=https://api.mistral.ai/v1
+export OPENAI_MODEL=mistral-large-latest
+
+openclaude
+```
+
+Get an API key at [console.mistral.ai](https://console.mistral.ai/).
+
+## AWS Bedrock
+
+```bash
+export CLAUDE_CODE_USE_BEDROCK=1
+export AWS_REGION=us-east-1
+export AWS_BEARER_TOKEN_BEDROCK=your-bearer-token
+
+openclaude
+```
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_USE_BEDROCK` | Set to `1` to enable AWS Bedrock |
+| `AWS_REGION` | AWS region (e.g. `us-east-1`) |
+| `AWS_DEFAULT_REGION` | Fallback region |
+| `AWS_BEARER_TOKEN_BEDROCK` | Bearer token for Bedrock authentication |
+| `ANTHROPIC_BEDROCK_BASE_URL` | Custom Bedrock runtime endpoint |
+
+## Google Vertex AI
+
+```bash
+export CLAUDE_CODE_USE_VERTEX=1
+export ANTHROPIC_VERTEX_PROJECT_ID=your-gcp-project-id
+export CLOUD_ML_REGION=us-east5
+export GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+
+openclaude
+```
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_USE_VERTEX` | Set to `1` to enable Google Vertex AI |
+| `ANTHROPIC_VERTEX_PROJECT_ID` | Your GCP project ID |
+| `CLOUD_ML_REGION` | Vertex region (e.g. `us-east5`) |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID |
+
+## Generic pattern
+
+The same three variables work for any OpenAI-compatible provider:
+
+```bash
+export CLAUDE_CODE_USE_OPENAI=1
+export OPENAI_API_KEY=your-key          # omit for local providers
+export OPENAI_BASE_URL=https://your-provider.com/v1
+export OPENAI_MODEL=your-model-name
+
+openclaude
+```
+
+<Tip>
+For local providers — `localhost`, `127.0.0.1`, `::1`, `.local` hostnames, and private LAN addresses — `OPENAI_API_KEY` is not required. OpenClaude detects local URLs automatically and skips API key validation.
+</Tip>

@@ -1,0 +1,98 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "OpenClaude",
+  "projectDescription": "A CLI fork of Claude Code that lets you use any LLM — OpenAI, Gemini, DeepSeek, Ollama, and 200+ models — via an OpenAI-compatible API shim.",
+  "theme": "luma",
+  "primaryColor": "#7c7c78",
+  "lightColor": "#040404",
+  "darkColor": "#c7c7c7",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "quickstart-windows"
+            ]
+          },
+          {
+            "group": "Providers",
+            "pages": [
+              "providers/openai",
+              "providers/ollama",
+              "providers/deepseek",
+              "providers/gemini",
+              "providers/codex",
+              "providers/local-models"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment-variables",
+              "configuration/provider-profiles",
+              "configuration/web-search",
+              "configuration/vscode-extension"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/diagnostics",
+              "troubleshooting/common-errors",
+              "troubleshooting/model-quality"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Architecture",
+            "pages": [
+              "reference/how-it-works",
+              "reference/openai-shim",
+              "reference/smart-router"
+            ]
+          },
+          {
+            "group": "CLI Commands",
+            "pages": [
+              "reference/slash-commands",
+              "reference/tools"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "OpenAI-compatible API shim that translates Anthropic SDK calls to any LLM provider",
+    "Support for 200+ models via OpenAI, Ollama, DeepSeek, Gemini, Codex, LM Studio, Together AI, Groq, Mistral, Azure OpenAI, and GitHub Models",
+    "Provider profiles system for saving and switching between provider configurations",
+    "Smart router with latency/cost/health-based automatic provider selection and fallback",
+    "Runtime diagnostics (doctor:runtime) with JSON output for CI/CD",
+    "Full tool support: Bash, FileRead, FileWrite, FileEdit, Glob, Grep, WebFetch, WebSearch, Agent, MCP, LSP, Tasks",
+    "Firecrawl integration for web search and JS-rendered page fetching across all providers",
+    "VS Code extension with OpenClaude Terminal Black theme"
+  ],
+  "publicApiSurface": [
+    "openclaude (CLI command)",
+    "CLAUDE_CODE_USE_OPENAI=1 (env var to enable OpenAI provider)",
+    "OPENAI_API_KEY (env var for API key)",
+    "OPENAI_MODEL (env var for model selection)",
+    "OPENAI_BASE_URL (env var for custom API endpoint)",
+    "CODEX_API_KEY (env var for Codex backend auth)",
+    "FIRECRAWL_API_KEY (env var for web search/fetch via Firecrawl)",
+    "bun run profile:init (provider profile bootstrap)",
+    "bun run profile:recommend (best provider recommendation)",
+    "bun run doctor:runtime (runtime diagnostics)",
+    "SmartRouter (Python class for intelligent provider routing)",
+    "openaiShim.ts (TypeScript Anthropic→OpenAI translation layer)"
+  ]
+}

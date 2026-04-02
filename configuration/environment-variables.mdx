@@ -1,0 +1,180 @@
+---
+title: Environment variables
+description: Complete reference for all OpenClaude environment variables, with example configurations for common providers.
+---
+
+OpenClaude is configured entirely through environment variables. Only set the block for the provider you want to use — you do not need to set variables from other sections.
+
+## Anthropic (default)
+
+No provider flag is required to use Anthropic. This is the default mode from the original Claude Code.
+
+| Variable | Description |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+| `ANTHROPIC_MODEL` | Model override (e.g. `claude-sonnet-4-5`) |
+| `ANTHROPIC_BASE_URL` | Custom Anthropic-compatible endpoint |
+
+## Core — OpenAI-compatible shim
+
+These variables activate and configure the OpenAI-compatible provider shim (`openaiShim.ts`). Set `CLAUDE_CODE_USE_OPENAI=1` any time you want to use a non-Anthropic model.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CLAUDE_CODE_USE_OPENAI` | Yes | — | Set to `1` to enable the OpenAI-compatible provider shim |
+| `OPENAI_API_KEY` | Yes\* | — | Your API key. Not required for local providers (Ollama, Atomic Chat, LM Studio) |
+| `OPENAI_MODEL` | Yes | `gpt-4o` | Model name such as `gpt-4o`, `deepseek-chat`, or `llama3.1:8b`. Takes priority over `ANTHROPIC_MODEL` |
+| `OPENAI_BASE_URL` | No | `https://api.openai.com/v1` | Override the API base URL. Use this to point at Ollama, LM Studio, OpenRouter, or any other compatible endpoint |
+| `OPENAI_API_BASE` | No | — | Alias for `OPENAI_BASE_URL`. `OPENAI_BASE_URL` takes priority if both are set |
+
+\* `OPENAI_API_KEY` is not required for local providers whose base URL resolves to localhost, a `*.local` hostname, or a private LAN IP range.
+
+## Native Gemini
+
+OpenClaude includes a native Gemini provider (separate from routing through OpenRouter).
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_USE_GEMINI` | Set to `1` to enable the native Gemini provider |
+| `GEMINI_API_KEY` | Your Google AI API key |
+| `GEMINI_MODEL` | Model name (e.g. `gemini-2.0-flash`) |
+| `GEMINI_BASE_URL` | Custom Gemini-compatible endpoint |
+
+## AWS Bedrock
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_USE_BEDROCK` | Set to `1` to enable AWS Bedrock |
+| `AWS_REGION` | AWS region (e.g. `us-east-1`) |
+| `AWS_DEFAULT_REGION` | Fallback region |
+| `AWS_BEARER_TOKEN_BEDROCK` | Bearer token for Bedrock authentication |
+| `ANTHROPIC_BEDROCK_BASE_URL` | Bedrock runtime endpoint |
+
+## Google Vertex AI
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_USE_VERTEX` | Set to `1` to enable Google Vertex AI |
+| `ANTHROPIC_VERTEX_PROJECT_ID` | Your GCP project ID |
+| `CLOUD_ML_REGION` | Vertex region (e.g. `us-east5`) |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID |
+
+## Codex
+
+Codex credentials are used automatically when you set `OPENAI_MODEL` to `codexplan`, `codexspark`, or any other Codex alias. OpenClaude reads `~/.codex/auth.json` first (the same file used by the Codex CLI), so no extra setup is needed if you are already a Codex CLI user.
+
+| Variable | Description |
+|----------|-------------|
+| `CODEX_API_KEY` | Codex or ChatGPT access token. Overrides the token read from `~/.codex/auth.json` |
+| `CODEX_AUTH_JSON_PATH` | Explicit path to a Codex CLI `auth.json` file. Takes priority over `CODEX_HOME` |
+| `CODEX_HOME` | Alternative Codex home directory. OpenClaude reads `$CODEX_HOME/auth.json` from this path |
+
+<Note>
+`codexplan` maps to GPT-5.4 with high reasoning effort. `codexspark` maps to GPT-5.3 Codex Spark for faster, lower-cost loops.
+</Note>
+
+## GitHub Models
+
+GitHub Models (models.github.ai) provides an OpenAI-compatible inference endpoint backed by GitHub Copilot. Use `CLAUDE_CODE_USE_GITHUB` instead of `CLAUDE_CODE_USE_OPENAI` — you do not need both.
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_CODE_USE_GITHUB` | Set to `1` to route requests through GitHub Models (`models.github.ai`) |
+| `GITHUB_TOKEN` or `GH_TOKEN` | GitHub personal access token (PAT) with `models` read access. Either variable is accepted |
+| `OPENAI_MODEL` | Optional model override. Use GitHub model IDs such as `openai/gpt-4.1` or the shorthand `github:copilot` (defaults to `openai/gpt-4.1`) |
+
+## Web search
+
+| Variable | Description |
+|----------|-------------|
+| `FIRECRAWL_API_KEY` | Firecrawl API key. Enables `WebSearch` for all non-Anthropic providers and upgrades `WebFetch` to JS-rendered page scraping |
+
+See [Web search and fetch](/configuration/web-search) for full details.
+
+## Behavior and tuning
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANTHROPIC_MODEL` | — | Model name override for the Anthropic provider. `OPENAI_MODEL` takes priority when both are set |
+| `OPENCLAUDE_DISABLE_CO_AUTHORED_BY` | — | Set to `1` to suppress the `Co-Authored-By: OpenClaude` trailer from git commits generated by OpenClaude |
+| `OPENCLAUDE_ENABLE_EXTENDED_KEYS` | — | Set to `1` to enable extended key reporting (Kitty keyboard protocol). Useful for iTerm2, WezTerm, and Ghostty if modifier keys feel off |
+| `CLAUDE_CODE_MAX_RETRIES` | `10` | Maximum number of API retries on failure |
+| `CLAUDE_CODE_UNATTENDED_RETRY` | — | Set to `1` to enable persistent retry mode for unattended/CI sessions. Retries 429/529 errors indefinitely with smart backoff |
+| `API_TIMEOUT_MS` | varies | Custom timeout for API requests in milliseconds |
+| `CLAUDE_DEBUG` | — | Set to `1` to enable debug logging |
+
+## Smart router
+
+The smart router (`smart_router.py`) is an optional Python component that pings all configured providers on startup, scores them by latency and cost, and routes each request to the best available option with automatic fallback.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROUTER_MODE` | `fixed` | Set to `smart` to enable multi-provider routing. The default `fixed` mode behaves like a normal single-provider setup |
+| `ROUTER_STRATEGY` | `balanced` | Scoring strategy: `latency` (minimize response time), `cost` (minimize token cost), or `balanced` (equal weight) |
+| `ROUTER_FALLBACK` | `true` | Set to `true` to automatically retry a failed request on the next-best provider |
+| `BIG_MODEL` | `gpt-4.1` | Model the router uses for large (sonnet-class) requests |
+| `SMALL_MODEL` | `gpt-4.1-mini` | Model the router uses for small (haiku-class) requests |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint used by the smart router for health checks and request routing |
+| `ATOMIC_CHAT_BASE_URL` | `http://127.0.0.1:1337` | Atomic Chat endpoint used by the smart router for health checks and request routing |
+
+## Example configurations
+
+<Tabs>
+  <Tab title="OpenAI">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-your-key-here
+    export OPENAI_MODEL=gpt-4o
+    ```
+  </Tab>
+  <Tab title="Ollama">
+    Pull the model first, then point OpenClaude at your local Ollama instance. No API key is required.
+
+    ```bash
+    ollama pull llama3.3:70b
+
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_BASE_URL=http://localhost:11434/v1
+    export OPENAI_MODEL=llama3.3:70b
+    ```
+  </Tab>
+  <Tab title="Codex">
+    If you already use the Codex CLI, `~/.codex/auth.json` is read automatically. Set `CODEX_API_KEY` only if you want to override that token.
+
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_MODEL=codexplan
+
+    # only needed if ~/.codex/auth.json does not exist
+    export CODEX_API_KEY=your-access-token
+    ```
+  </Tab>
+  <Tab title="GitHub Models">
+    ```bash
+    export CLAUDE_CODE_USE_GITHUB=1
+    export GITHUB_TOKEN=ghp_your-token-here
+    # optional — defaults to openai/gpt-4.1
+    export OPENAI_MODEL=openai/gpt-4.1
+    ```
+  </Tab>
+  <Tab title="OpenRouter">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-or-your-key-here
+    export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+    export OPENAI_MODEL=google/gemini-2.0-flash-001
+    ```
+  </Tab>
+  <Tab title="DeepSeek">
+    ```bash
+    export CLAUDE_CODE_USE_OPENAI=1
+    export OPENAI_API_KEY=sk-your-key-here
+    export OPENAI_BASE_URL=https://api.deepseek.com/v1
+    export OPENAI_MODEL=deepseek-chat
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+Persist your configuration in `~/.bashrc`, `~/.zshrc`, or `~/.profile` so you do not need to re-export variables every session. Alternatively, use [provider profiles](/configuration/provider-profiles) for a more structured approach.
+</Tip>
